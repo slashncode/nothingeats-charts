@@ -1,0 +1,11 @@
+# Values used by CI to render every template.
+image:
+  tag: main-abc1234-1761300000
+env:
+  POSTHOG_HOST: https://eu.i.posthog.com
+secretEnv:
+  POSTHOG_KEY: { secret: web-posthog, key: key }
+route:
+  enabled: true
+podDisruptionBudget:
+  enabled: true

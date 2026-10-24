@@ -1,0 +1,11 @@
+apiVersion: v2
+name: static-web
+description: A NothingEats single-page app served by unprivileged nginx — Deployment, Service and a Gateway API route
+type: application
+version: 0.1.0
+home: https://github.com/slashncode/nothingeats-charts
+sources:
+  - https://github.com/slashncode/nothingeats-charts
+maintainers:
+  - name: slashncode
+    url: https://github.com/slashncode

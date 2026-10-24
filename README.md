@@ -27,6 +27,25 @@ route:
 
 See [`values.yaml`](charts/backend-service/values.yaml) for everything else.
 
+## `static-web`
+
+One chart for every single-page app (web, backoffice), built into an nginx-unprivileged image:
+
+- **Deployment** with liveness and readiness probes on `/healthz`, the same restricted security context (UID 101 of nginx-unprivileged, read-only root filesystem, `/tmp` as `emptyDir`), no service-account token.
+- **Runtime configuration** through `env` / `secretEnv`: the image writes them into `/env.js` at start, so one image serves every environment.
+- **HTTPRoute** for `/` by default; Gateway API picks the most specific path, so `/api/*` still reaches the services.
+- Optional **PodDisruptionBudget**.
+
+```yaml
+image:
+  repository: ghcr.io/slashncode/nothingeats-web
+  tag: main-1a2b3c4-1761300000
+env:
+  POSTHOG_HOST: https://eu.i.posthog.com
+route:
+  enabled: true
+```
+
 ## Development
 
 ```bash

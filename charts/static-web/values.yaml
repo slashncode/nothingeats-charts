@@ -1,0 +1,49 @@
+# Image built by the app's CI: nginx-unprivileged (user 101) with the built SPA.
+image:
+  repository: ghcr.io/slashncode/nothingeats-web
+  # Required. Flux image automation keeps it current (tags look like main-<sha>-<unix time>).
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+replicas: 1
+
+containerPort: 8080
+
+# Runtime configuration: the image turns these into /env.js at start, so one image fits every
+# environment. E.g. POSTHOG_KEY, POSTHOG_HOST.
+env: {}
+
+# Environment variables from secrets: NAME: { secret: <secret name>, key: <key> }
+secretEnv: {}
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    memory: 64Mi
+
+probes:
+  path: /healthz
+
+# Gateway API HTTPRoute; the most specific path wins, so /api/* still reaches the services.
+route:
+  enabled: false
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+  hostnames:
+    - nothingeats.localhost
+  pathPrefix: /
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
