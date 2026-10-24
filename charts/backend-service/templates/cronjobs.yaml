@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/component: cron
 spec:
   schedule: {{ required "cronJobs[].schedule is required" .schedule | quote }}
+  suspend: {{ .suspend | default false }}
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3

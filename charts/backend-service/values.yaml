@@ -53,6 +53,7 @@ migrations:
   activeDeadlineSeconds: 300
 
 # CronJobs running `cron <task>`, e.g. - { name: rotate-keys, task: rotate-keys, schedule: "0 3 * * *" }
+# `suspend: true` keeps a task for manual runs only: kubectl create job --from=cronjob/<release>-<name> <job>
 cronJobs: []
 
 # Gateway API HTTPRoute for the public API path /api/<context>.
