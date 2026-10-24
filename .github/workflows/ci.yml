@@ -75,7 +75,16 @@ jobs:
               continue
             fi
             helm package "$chart" --destination dist
-            digest=$(helm push "dist/$name-$version.tgz" "$REGISTRY" 2>&1 | tee /dev/stderr | awk '/^Digest:/ {print $2}')
+            # The first push to a new GHCR package can fail with a transient 404 while tagging; retry.
+            for attempt in 1 2 3; do
+              if helm push "dist/$name-$version.tgz" "$REGISTRY" > push.log 2>&1; then break; fi
+              cat push.log
+              if [ "$attempt" -eq 3 ]; then exit 1; fi
+              sleep 15
+            done
+            cat push.log
+            digest=$(awk '/^Digest:/ {print $2}' push.log)
+            if [ -z "$digest" ]; then echo "::error::no digest for $name $version"; exit 1; fi
             cosign sign --yes "${REGISTRY#oci://}/$name@$digest"
             echo "Published $name $version ($digest)" >> "$GITHUB_STEP_SUMMARY"
           done
