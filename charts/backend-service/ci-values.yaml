@@ -1,0 +1,16 @@
+# Values used by CI to render every template.
+image:
+  tag: main-abc1234-1761300000
+env:
+  DATABASE__URL: jdbc:postgresql://postgres-rw:5432/example
+secretEnv:
+  DATABASE__USER: { secret: example-db, key: username }
+  DATABASE__PASSWORD: { secret: example-db, key: password }
+cronJobs:
+  - name: cleanup
+    task: cleanup
+    schedule: "0 3 * * *"
+route:
+  enabled: true
+podDisruptionBudget:
+  enabled: true

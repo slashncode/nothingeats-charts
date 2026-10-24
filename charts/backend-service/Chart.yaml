@@ -1,0 +1,11 @@
+apiVersion: v2
+name: backend-service
+description: A NothingEats backend service — Deployment with probes, migrate hook Job, CronJobs and a Gateway API route
+type: application
+version: 0.1.0
+home: https://github.com/slashncode/nothingeats-charts
+sources:
+  - https://github.com/slashncode/nothingeats-charts
+maintainers:
+  - name: slashncode
+    url: https://github.com/slashncode

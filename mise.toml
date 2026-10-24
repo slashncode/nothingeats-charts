@@ -1,0 +1,5 @@
+# Tools for chart development and CI (same pins as the hub's mise.toml).
+[tools]
+helm = "4.3.1"
+kubeconform = "0.8.0"
+yq = "4.54.1"

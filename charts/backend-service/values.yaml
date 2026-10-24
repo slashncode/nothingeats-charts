@@ -1,0 +1,81 @@
+# Image built by the service's CI (Jib, distroless, user 65532).
+image:
+  repository: ghcr.io/slashncode/nothingeats-example-service
+  # Required. Flux image automation keeps it current (tags look like main-<sha>-<unix time>).
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+replicas: 1
+
+# Port the service listens on (HTTP__PORT).
+containerPort: 8080
+
+# Plain environment variables. Config uses `__` for nesting, e.g. DATABASE__URL.
+env: {}
+
+# Environment variables from secrets: NAME: { secret: <secret name>, key: <key> }
+secretEnv: {}
+
+# Whole secrets or config maps as environment, passed through to envFrom.
+envFrom: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 320Mi
+  limits:
+    memory: 512Mi
+
+probes:
+  # Generous startup budget for the JVM; liveness only begins after startup succeeded.
+  startup:
+    path: /health/live
+    periodSeconds: 2
+    failureThreshold: 60
+  liveness:
+    path: /health/live
+    periodSeconds: 10
+    failureThreshold: 3
+  readiness:
+    path: /health/ready
+    periodSeconds: 5
+    failureThreshold: 2
+
+# Must cover the app's LIFECYCLE__DRAIN_DELAY plus its HTTP shutdown timeout.
+terminationGracePeriodSeconds: 30
+
+# `migrate` mode as a Helm pre-install/pre-upgrade hook: pods never migrate on start.
+migrations:
+  enabled: true
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+
+# CronJobs running `cron <task>`, e.g. - { name: rotate-keys, task: rotate-keys, schedule: "0 3 * * *" }
+cronJobs: []
+
+# Gateway API HTTPRoute for the public API path /api/<context>.
+route:
+  enabled: false
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+  hostnames:
+    - nothingeats.localhost
+  # Defaults to /api/<release name without the "-service" suffix>.
+  pathPrefix: ""
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+serviceAccount:
+  create: true
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

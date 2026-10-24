@@ -1,0 +1,81 @@
+# Lint and validate every chart; on main, publish new chart versions to GHCR as signed OCI artifacts.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+env:
+  REGISTRY: oci://ghcr.io/${{ github.repository_owner }}/charts
+  K8S_VERSION: "1.36.0"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+      - name: Lint and validate
+        run: scripts/validate.sh
+      - name: Require a version bump for changed charts
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          for chart in charts/*/; do
+            name=$(basename "$chart")
+            version=$(yq '.version' "$chart/Chart.yaml")
+            if git diff --quiet "$BASE" -- "$chart"; then continue; fi
+            if helm show chart "$REGISTRY/$name" --version "$version" >/dev/null 2>&1; then
+              echo "::error file=$chart/Chart.yaml::$name changed but version $version is already published. Bump it."
+              exit 1
+            fi
+          done
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Log in to GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          echo "$TOKEN" | cosign login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Publish new chart versions
+        run: |
+          for chart in charts/*/; do
+            name=$(basename "$chart")
+            version=$(yq '.version' "$chart/Chart.yaml")
+            if helm show chart "$REGISTRY/$name" --version "$version" >/dev/null 2>&1; then
+              echo "$name $version already published"
+              continue
+            fi
+            helm package "$chart" --destination dist
+            digest=$(helm push "dist/$name-$version.tgz" "$REGISTRY" 2>&1 | tee /dev/stderr | awk '/^Digest:/ {print $2}')
+            cosign sign --yes "${REGISTRY#oci://}/$name@$digest"
+            echo "Published $name $version ($digest)" >> "$GITHUB_STEP_SUMMARY"
+          done

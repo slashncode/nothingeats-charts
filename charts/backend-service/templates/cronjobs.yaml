@@ -1,0 +1,40 @@
+{{- range .Values.cronJobs }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "backend-service.name" $ }}-{{ required "cronJobs[].name is required" .name }}
+  labels:
+    {{- include "backend-service.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: cron
+spec:
+  schedule: {{ required "cronJobs[].schedule is required" .schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .backoffLimit | default 1 }}
+      template:
+        metadata:
+          labels:
+            {{- include "backend-service.selectorLabels" $ | nindent 12 }}
+            app.kubernetes.io/component: cron
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          {{- with $.Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            fsGroup: 65532
+          containers:
+            - name: cron
+              {{- include "backend-service.container" (dict "root" $ "args" (list "cron" (required "cronJobs[].task is required" .task))) | nindent 14 }}
+              resources:
+                {{- toYaml $.Values.resources | nindent 16 }}
+          volumes:
+            - name: tmp
+              emptyDir: {}
+{{- end }}

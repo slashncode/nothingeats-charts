@@ -1,0 +1,40 @@
+{{- if .Values.migrations.enabled }}
+# Runs `migrate` before every install and upgrade. Serving pods refuse to start against a
+# schema with pending migrations, so a failed migration stops the rollout instead of breaking it.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "backend-service.name" . }}-migrate
+  labels:
+    {{- include "backend-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.migrations.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "backend-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: 65532
+      containers:
+        - name: migrate
+          {{- include "backend-service.container" (dict "root" . "args" (list "migrate")) | nindent 10 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
