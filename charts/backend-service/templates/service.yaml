@@ -12,6 +12,26 @@ spec:
       port: 80
       targetPort: http
 ---
+{{- if .Values.grpc.enabled }}
+# Headless: DNS returns every ready pod, so gRPC clients (round_robin) spread their long-lived
+# HTTP/2 connections over all pods instead of pinning one through a virtual IP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "backend-service.name" . }}-grpc
+  labels:
+    {{- include "backend-service.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "backend-service.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: grpc
+      port: {{ .Values.grpc.port }}
+      targetPort: grpc
+      appProtocol: grpc
+---
+{{- end }}
 {{- if .Values.serviceAccount.create }}
 apiVersion: v1
 kind: ServiceAccount

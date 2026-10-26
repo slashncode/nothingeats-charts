@@ -14,3 +14,5 @@ route:
   enabled: true
 podDisruptionBudget:
   enabled: true
+grpc:
+  enabled: true

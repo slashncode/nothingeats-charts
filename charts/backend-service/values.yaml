@@ -12,6 +12,11 @@ replicas: 1
 # Port the service listens on (HTTP__PORT).
 containerPort: 8080
 
+# gRPC server (GRPC__PORT). Clients call dns:///<release>-grpc:<port>, a headless service.
+grpc:
+  enabled: false
+  port: 9090
+
 # Plain environment variables. Config uses `__` for nesting, e.g. DATABASE__URL.
 env: {}
 

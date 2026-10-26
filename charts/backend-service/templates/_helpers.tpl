@@ -67,6 +67,10 @@ args:
 env:
   - name: HTTP__PORT
     value: {{ .root.Values.containerPort | quote }}
+  {{- if .root.Values.grpc.enabled }}
+  - name: GRPC__PORT
+    value: {{ .root.Values.grpc.port | quote }}
+  {{- end }}
   {{- include "backend-service.env" .root | nindent 2 }}
 {{- with .root.Values.envFrom }}
 envFrom:
