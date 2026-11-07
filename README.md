@@ -9,7 +9,7 @@ One chart for every backend service (Kotlin and TypeScript):
 - **Deployment** running `serve`, with startup, liveness and readiness probes on `/health/*`, a restricted security context (non-root UID 65532, read-only root filesystem with an `emptyDir` for `/tmp`, no capabilities) and no service-account token.
 - **Migrate Job** as a Helm `pre-install,pre-upgrade` hook running `migrate`. Pods never migrate on start and refuse to serve against a schema with pending migrations, so a failed migration stops the rollout instead of breaking it.
 - **CronJobs** running `cron <task>` from `cronJobs: [{name, task, schedule}]`.
-- **HTTPRoute** (Gateway API) for `/api/<context>`, derived from the release name (`catalog-service` → `/api/catalog`).
+- **HTTPRoute** (Gateway API) for `/api/<context>`, derived from the release name (`catalog-service` → `/api/catalog`). The gateway sets `route.responseHeaders` on every answer; by default an API's: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`.
 - Optional **PodDisruptionBudget**.
 
 ```yaml

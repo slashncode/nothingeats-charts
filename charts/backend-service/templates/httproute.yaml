@@ -17,6 +17,16 @@ spec:
         - path:
             type: PathPrefix
             value: {{ .Values.route.pathPrefix | default (printf "/api/%s" (include "backend-service.name" . | trimSuffix "-service")) }}
+      {{- with .Values.route.responseHeaders }}
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              {{- range $name, $value := . }}
+              - name: {{ $name }}
+                value: {{ $value | quote }}
+              {{- end }}
+      {{- end }}
       backendRefs:
         - name: {{ include "backend-service.name" . }}
           port: 80

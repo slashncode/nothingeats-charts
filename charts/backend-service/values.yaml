@@ -71,6 +71,12 @@ route:
     - nothingeats.localhost
   # Defaults to /api/<release name without the "-service" suffix>.
   pathPrefix: ""
+  # Set on every response by the gateway. An API answers JSON or an event stream, never a page:
+  # nothing in it may load, run or be framed, whatever a response ends up containing.
+  responseHeaders:
+    Content-Security-Policy: "default-src 'none'; frame-ancestors 'none'"
+    X-Content-Type-Options: nosniff
+    Referrer-Policy: no-referrer
 
 podDisruptionBudget:
   enabled: false
